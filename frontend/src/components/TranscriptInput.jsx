@@ -1,64 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-const BASE_URL="https://kr-ai-meeting-bot1-25.onrender.com"
+
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [activeAction, setActiveAction] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    fetch('https://kr-ai-meeting-bot-backend.vercel.app/get-transcript')
-      .then((res) => res.ok ? res.text() : '')
-      .then((text) => {
-        if (text.trim()) {
-          setTranscript(text);
-        }
-      });
-  }, []);
+  const isBusy = isUploading || isGenerating;
 
-  const handleFileUpload = async () => {
-    if (!file) return alert('Please select a file.');
-    setLoading(true);
-    setActiveAction('upload');
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
 
-    const formData = new FormData();
-    formData.append('file', file);
+  const handleUploadAndSummarize = async () => {
+    if (!file) {
+      alert("⚠️ Please select a file first.");
+      return;
+    }
 
+    setIsUploading(true);
     try {
-      const res = await axios.post(`${BASE-URL}/transcribe`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const formData = new FormData();
+      formData.append('file', file);
 
-      setTranscript(res.data.transcript);
-      setSummary(res.data.summary[0]?.summary || '');
-      setActionItems(res.data.action_items || []);
+      const res = await axios.post('http://localhost:8000/transcribe', formData);
+      updateTranscriptData(res.data);
     } catch (err) {
-      console.error(err);
-      alert('Error uploading file.');
+      console.error('Upload failed:', err);
+      alert('❌ Upload failed.');
     } finally {
-      setLoading(false);
-      setActiveAction(null);
+      setIsUploading(false);
     }
   };
 
-  const handleGenerateSummary = async () => {
-    setLoading(true);
-    setActiveAction('generate');
+  const handleSummarizeFromFile = async () => {
+    setIsGenerating(true);
     try {
-      const res = await axios.post(`${BASEURL}/transcribe/from-file`);
-      setTranscript(res.data.transcript);
-      setSummary(res.data.summary[0]?.summary || '');
-      setActionItems(res.data.action_items || []);
+      const res = await axios.post('http://localhost:8000/transcribe/from-file');
+      updateTranscriptData(res.data);
     } catch (err) {
-      console.error(err);
-      alert('Error generating summary.');
+      console.error('meeting.txt summarize failed:', err);
+      alert('❌ meeting.txt file missing in backend transcripts/ folder.');
     } finally {
-      setLoading(false);
-      setActiveAction(null);
+      setIsGenerating(false);
     }
+  };
+
+  const updateTranscriptData = (data) => {
+    setTranscript(data.transcript || '');
+    setSummary(data.summary?.map((s) => s.summary).join('\n') || 'No summary available');
+    setActionItems(data.action_items || []);
   };
 
   const handleClear = () => {
@@ -66,68 +60,128 @@ const TranscriptInput = () => {
     setTranscript('');
     setSummary('');
     setActionItems([]);
-    setActiveAction(null);
+  };
+
+  const handleCopy = () => {
+    const text = generateExportText();
+    navigator.clipboard.writeText(text);
+    alert('📋 Copied to clipboard!');
+  };
+
+  const handleDownload = () => {
+    const text = generateExportText();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'meeting-summary.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateMailtoLink = () => {
+    const text = generateExportText();
+    return `mailto:?subject=Meeting Summary&body=${encodeURIComponent(text)}`;
+  };
+
+  const generateExportText = () => {
+    let text = '📝 Meeting Summary:\n' + summary + '\n\n';
+    text += '✅ Action Items:\n';
+    if (Array.isArray(actionItems) && actionItems.length > 0) {
+      text += actionItems.map((item) =>
+        `- ${item.task} [Owner: ${item.owner}] [Deadline: ${item.deadline}]`
+      ).join('\n');
+    } else {
+      text += 'No action items.';
+    }
+    return text;
+  };
+
+  const handleExportToNotion = () => {
+    alert('📓 Export to Notion feature coming soon!');
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Transcript Processor</h1>
+    <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-lg border">
+      <h2 className="text-2xl font-bold mb-4">🎙️ Transcript Processor</h2>
 
+      {/* 🔹 Auto process meeting.txt */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold">Upload a File</h2>
-        <input
-          type="file"
-          accept=".mp3,.wav,.m4a,.txt"
-          onChange={(e) => setFile(e.target.files[0])}
-          className="mt-2"
-        />
-        <div className="mt-2">
-          <button
-            onClick={handleFileUpload}
-            disabled={loading || activeAction === 'generate'}
-            className="mr-2 px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
-          >
-            Upload & Transcribe
-          </button>
-          <button
-            onClick={handleGenerateSummary}
-            disabled={loading || activeAction === 'upload'}
-            className="px-4 py-2 bg-green-600 text-white rounded disabled:bg-gray-400"
-          >
-            Generate Summary from Saved File
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold mb-1">🧠 Auto Process Saved Transcript</h3>
+        <button
+          onClick={handleSummarizeFromFile}
+          disabled={isBusy}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          {isGenerating ? 'Processing...' : 'Generate Summary from meeting.txt'}
+        </button>
       </div>
 
-      <button
-        onClick={handleClear}
-        className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
-      >
-        Clear
-      </button>
+      {/* 🔹 Upload transcript file */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold mb-1">📄 Upload Transcript File</h3>
+        <input type="file" onChange={handleFileChange} className="border p-2 rounded mr-2" />
+        <button
+          onClick={handleUploadAndSummarize}
+          disabled={isBusy}
+          className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+        >
+          {isUploading ? 'Uploading...' : 'Upload & Summarize'}
+        </button>
+      </div>
 
-      {transcript && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold">Transcript</h3>
-          <textarea className="w-full p-2 border rounded" rows="10" value={transcript} readOnly />
-        </div>
-      )}
+      {/* 🔹 Clear */}
+      <div className="mb-4">
+        <button
+          onClick={handleClear}
+          className="bg-red-100 text-red-700 px-4 py-2 rounded border hover:bg-red-200"
+        >
+          Clear
+        </button>
+      </div>
 
+      {/* 🔹 Summary */}
       {summary && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold">Summary</h3>
-          <p className="bg-white p-3 rounded shadow">{summary}</p>
+        <div className="mb-4">
+          <h4 className="font-bold mb-1">📝 Summary</h4>
+          <p className="whitespace-pre-wrap text-gray-800">{summary}</p>
         </div>
       )}
 
-      {actionItems.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold">Action Items</h3>
-          <ul className="list-disc ml-6">
-            {actionItems.map((item, i) => (
-              <li key={i}>{JSON.stringify(item)}</li>
+      {/* 🔹 Action Items */}
+      {Array.isArray(actionItems) && actionItems.length > 0 && (
+        <div className="mb-4">
+          <h4 className="font-bold mb-1">✅ Action Items</h4>
+          <ul className="list-disc list-inside text-gray-800">
+            {actionItems.map((item, index) => (
+              <li key={index}>
+                <strong>Task:</strong> {item.task}<br />
+                <strong>Owner:</strong> {item.owner}<br />
+                <strong>Deadline:</strong> {item.deadline}
+              </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* 🔹 Export Options */}
+      {(summary || actionItems.length > 0) && (
+        <div className="flex flex-col gap-2">
+          <button onClick={handleCopy} className="bg-gray-700 text-white px-4 py-2 rounded">
+            📋 Copy to Clipboard
+          </button>
+          <button onClick={handleDownload} className="bg-green-600 text-white px-4 py-2 rounded">
+            💾 Download Summary
+          </button>
+          <a
+            href={generateMailtoLink()}
+            className="bg-purple-600 text-white px-4 py-2 rounded text-center"
+          >
+            📧 Send via Email
+          </a>
+          <button onClick={handleExportToNotion} className="bg-yellow-500 text-white px-4 py-2 rounded">
+            📓 Export to Notion
+          </button>
         </div>
       )}
     </div>
@@ -135,6 +189,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
 
 
