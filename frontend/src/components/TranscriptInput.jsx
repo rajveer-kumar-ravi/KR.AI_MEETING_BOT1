@@ -7,33 +7,33 @@ const TranscriptInput = () => {
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false); // 🔸 NEW STATE
 
-  // 🔹 File change handler
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  // 🔹 Upload and summarize uploaded file
   const handleUploadAndSummarize = async () => {
     if (!file) {
       alert("⚠️ Please select a file first.");
       return;
     }
+    setUploading(true);  // 🔸 Disable summary button
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await axios.post(`${BASE_URL}/transcribe`, formData);
+     const res = await axios.post(`${BASE_URL}/transcribe`, formData);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('Upload failed:', err);
       alert('❌ Upload failed.');
     } finally {
       setLoading(false);
+      setUploading(false);  // 🔸 Re-enable summary button
     }
   };
 
-  // 🔹 Summarize from backend's `meeting.txt`
   const handleSummarizeFromFile = async () => {
     setLoading(true);
     try {
@@ -47,7 +47,6 @@ const TranscriptInput = () => {
     }
   };
 
-  // 🔹 Utility to update data on UI
   const updateTranscriptData = (data) => {
     setTranscript(data.transcript || '');
     setSummary(data.summary?.map((s) => s.summary).join('\n') || 'No summary available');
@@ -109,8 +108,8 @@ const TranscriptInput = () => {
         <h3 className="text-lg font-semibold mb-1">🧠 Auto Process Saved Transcript</h3>
         <button
           onClick={handleSummarizeFromFile}
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          disabled={loading || uploading} // 🔸 Disabled if uploading
+          className={`px-4 py-2 rounded text-white ${loading || uploading ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'}`}
         >
           {loading ? 'Processing...' : 'Generate Summary from meeting.txt'}
         </button>
@@ -188,5 +187,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
+
 
 
