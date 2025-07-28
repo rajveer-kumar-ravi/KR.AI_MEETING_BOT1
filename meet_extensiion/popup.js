@@ -103,7 +103,7 @@ async function sendTranscriptToBackend(transcript) {
   }
 }
 
-// Open frontend to generate summary from backend transcript
+// ✅ Open Vercel frontend to generate summary from backend transcript
 function redirectToFrontend() {
   if (!transcriptText.trim()) {
     updateStatus("No transcript to summarize");
@@ -111,7 +111,9 @@ function redirectToFrontend() {
   }
 
   updateStatus("Opening summary...");
-  chrome.tabs.create({ url: "http://localhost:3000/?source=extension" });
+
+  // ✅ Replace with your Vercel app URL
+  chrome.tabs.create({ url: "https://kr-ai-meeting-bot-1.vercel.app/?source=extension" });
 }
 
 // Listen for new transcript lines from content script
@@ -139,3 +141,4 @@ chrome.storage.local.get(['zoomToken'], (result) => {
     fetchMeetingInfo();
   }
 });
+
