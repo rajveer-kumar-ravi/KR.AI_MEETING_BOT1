@@ -16,7 +16,9 @@ from openai import OpenAI
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 app = FastAPI()
-
+@app.get("/")
+def root():
+    return {"message": "Backend is running!"}
 
 # ---- API Keys ----
 ASSEMBLY_API_KEY = "5d8d89d0b1c74d3c92ab8ce0840e35b8"
