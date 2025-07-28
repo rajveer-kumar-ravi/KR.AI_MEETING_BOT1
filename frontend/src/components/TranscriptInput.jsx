@@ -1,132 +1,145 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-const BASE_URL="https://kr-ai-meeting-bot1-25.onrender.com"
+
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [disableType, setDisableType] = useState(null); // "upload" or "generate"
+  const [activeAction, setActiveAction] = useState(null); // "upload" or "generate"
 
-  const updateTranscriptData = (data) => {
-    setTranscript(data.transcript || '');
-    setSummary(data.summary || '');
-    setActionItems(data.action_items || []);
-  };
+  // Load default meeting.txt on mount
+  useEffect(() => {
+    fetch('/transcripts/meeting.txt')
+      .then((res) => res.ok ? res.text() : '')
+      .then((text) => {
+        if (text.trim()) {
+          setTranscript(text);
+        }
+      });
+  }, []);
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setDisableType(null); // reset state
-  };
-
-  const handleUploadAndSummarize = async () => {
-    if (!file) {
-      alert('⚠️ Please select a file first.');
-      return;
-    }
-
+  // Upload transcript file to backend
+  const handleFileUpload = async () => {
+    if (!file) return alert('Please select a file first.');
     setLoading(true);
-    setDisableType("upload");
+    setActiveAction('upload');
+
+    const formData = new FormData();
+    formData.append('file', file);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await axios.post(
-        'https://kr-ai-meeting-backend.onrender.com/transcribe',
-        formData
-      );
-
-      updateTranscriptData(res.data);
-    } catch (err) {
-      console.error('Upload failed:', err);
+      const response = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setTranscript(response.data.transcript);
+      setSummary(response.data.summary);
+      setActionItems(response.data.action_items || []);
+    } catch (error) {
+      console.error('Upload failed:', error);
       alert('❌ Upload failed.');
-      setDisableType(null);
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
-  const handleSummarizeFromFile = async () => {
+  // Generate summary from /transcribe/from-file
+  const handleGenerateSummary = async () => {
     setLoading(true);
-    setDisableType("generate");
+    setActiveAction('generate');
 
     try {
-      const res = await axios.post(
-        'https://kr-ai-meeting-backend.onrender.com/transcribe/from-file'
-      );
-
-      updateTranscriptData(res.data);
-    } catch (err) {
-      console.error('Summary generation failed:', err);
+      const response = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe/from-file');
+      setTranscript(response.data.transcript);
+      setSummary(response.data.summary);
+      setActionItems(response.data.action_items || []);
+    } catch (error) {
+      console.error('Summary generation failed:', error);
       alert('❌ Summary generation failed.');
-      setDisableType(null);
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
+  };
+
+  const handleClear = () => {
+    setFile(null);
+    setTranscript('');
+    setSummary('');
+    setActionItems([]);
+    setActiveAction(null);
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Transcript Processor</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold mb-4">🧾 Transcript Processor</h1>
 
-      {/* File Upload */}
-      <div className="mb-4">
-        <input type="file" onChange={handleFileChange} className="mb-2" />
+      {/* Auto Process Saved Transcript */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold">🧠 Auto Process Saved Transcript</h2>
         <button
-          onClick={handleUploadAndSummarize}
-          disabled={loading || disableType === "generate"}
-          className={`px-4 py-2 rounded text-white ${
-            loading || disableType === "generate"
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700'
-          }`}
+          onClick={handleGenerateSummary}
+          disabled={loading || activeAction === 'upload'}
+          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
         >
-          {loading && disableType === "upload" ? 'Uploading...' : 'Upload & Summarize'}
+          Generate Summary from meeting.txt
         </button>
       </div>
 
-      {/* Generate Summary from meeting.txt */}
-      <div className="mb-4">
-        <button
-          onClick={handleSummarizeFromFile}
-          disabled={loading || disableType === "upload"}
-          className={`px-4 py-2 rounded text-white ${
-            loading || disableType === "upload"
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {loading && disableType === "generate"
-            ? 'Generating Summary...'
-            : 'Generate Summary from meeting.txt'}
-        </button>
+      {/* Upload Transcript */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold">📄 Upload Transcript File</h2>
+        <input
+          type="file"
+          accept=".mp3,.wav,.txt"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="mt-2"
+        />
+        <div className="mt-2">
+          <button
+            onClick={handleFileUpload}
+            disabled={loading || activeAction === 'generate'}
+            className="mr-2 px-4 py-2 bg-green-600 text-white rounded disabled:bg-gray-400"
+          >
+            {loading && activeAction === 'upload' ? 'Processing...' : 'Upload & Transcribe'}
+          </button>
+          <button
+            onClick={handleClear}
+            className="px-4 py-2 bg-red-500 text-white rounded"
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
-      {/* Display Transcript */}
+      {/* Result */}
       {transcript && (
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Transcript:</h2>
-          <pre className="whitespace-pre-wrap bg-gray-100 p-3 rounded">{transcript}</pre>
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg">📝 Transcript</h3>
+          <textarea
+            className="w-full border mt-2 p-2 rounded"
+            rows="6"
+            value={transcript}
+            readOnly
+          />
         </div>
       )}
 
-      {/* Display Summary */}
       {summary && (
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Summary:</h2>
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg">📋 Summary</h3>
           <p className="bg-gray-100 p-3 rounded">{summary}</p>
         </div>
       )}
 
-      {/* Display Action Items */}
       {actionItems.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold">Action Items:</h2>
-          <ul className="list-disc pl-6 bg-gray-100 p-3 rounded">
-            {actionItems.map((item, idx) => (
-              <li key={idx}>{item}</li>
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg">✅ Action Items</h3>
+          <ul className="list-disc ml-6">
+            {actionItems.map((item, index) => (
+              <li key={index}>{item}</li>
             ))}
           </ul>
         </div>
@@ -136,6 +149,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
 
 
