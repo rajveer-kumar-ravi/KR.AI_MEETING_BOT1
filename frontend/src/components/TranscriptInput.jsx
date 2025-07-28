@@ -6,10 +6,9 @@ const TranscriptInput = () => {
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const isBusy = isUploading || isGenerating;
+  const [loading, setLoading] = useState(false);
+  const [uploadDisabled, setUploadDisabled] = useState(false);
+  const [summarizeDisabled, setSummarizeDisabled] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -21,23 +20,27 @@ const TranscriptInput = () => {
       return;
     }
 
-    setIsUploading(true);
+    setLoading(true);
+    setSummarizeDisabled(true); // disable meeting.txt button
+
     try {
       const formData = new FormData();
       formData.append('file', file);
-
       const res = await axios.post('http://localhost:8000/transcribe', formData);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('Upload failed:', err);
       alert('❌ Upload failed.');
     } finally {
-      setIsUploading(false);
+      setLoading(false);
+      setSummarizeDisabled(false);
     }
   };
 
   const handleSummarizeFromFile = async () => {
-    setIsGenerating(true);
+    setLoading(true);
+    setUploadDisabled(true); // disable upload button
+
     try {
       const res = await axios.post('http://localhost:8000/transcribe/from-file');
       updateTranscriptData(res.data);
@@ -45,7 +48,8 @@ const TranscriptInput = () => {
       console.error('meeting.txt summarize failed:', err);
       alert('❌ meeting.txt file missing in backend transcripts/ folder.');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
+      setUploadDisabled(false);
     }
   };
 
@@ -105,28 +109,28 @@ const TranscriptInput = () => {
     <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-lg border">
       <h2 className="text-2xl font-bold mb-4">🎙️ Transcript Processor</h2>
 
-      {/* 🔹 Auto process meeting.txt */}
+      {/* 🔹 Generate from backend's existing meeting.txt */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-1">🧠 Auto Process Saved Transcript</h3>
         <button
           onClick={handleSummarizeFromFile}
-          disabled={isBusy}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          disabled={loading || summarizeDisabled}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          {isGenerating ? 'Processing...' : 'Generate Summary from meeting.txt'}
+          {loading ? 'Processing...' : 'Generate Summary from meeting.txt'}
         </button>
       </div>
 
-      {/* 🔹 Upload transcript file */}
+      {/* 🔹 Upload your own file */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-1">📄 Upload Transcript File</h3>
         <input type="file" onChange={handleFileChange} className="border p-2 rounded mr-2" />
         <button
           onClick={handleUploadAndSummarize}
-          disabled={isBusy}
-          className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          disabled={loading || uploadDisabled}
+          className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 disabled:opacity-50"
         >
-          {isUploading ? 'Uploading...' : 'Upload & Summarize'}
+          {loading ? 'Processing...' : 'Upload & Summarize'}
         </button>
       </div>
 
@@ -189,6 +193,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
 
 
