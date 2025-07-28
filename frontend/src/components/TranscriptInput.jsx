@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-const BASE_URL="https://kr-ai-meeting-bot.onrender.com"
+const BASE_URL="https://kr-ai-meeting-bot-daeg.onrender.com"
+
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
