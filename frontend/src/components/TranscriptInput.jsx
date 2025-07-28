@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
+const BASE_URL="https://kr-ai-meeting-bot1-25.onrender.com"
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTask, setActiveTask] = useState(null); // "upload" or "file" or null
+  const [uploading, setUploading] = useState(false);
+  const [processingFile, setProcessingFile] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -18,34 +19,35 @@ const TranscriptInput = () => {
       alert("⚠️ Please select a file first.");
       return;
     }
+
+    setUploading(true);
     setLoading(true);
-    setActiveTask("upload");
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await axios.post('http://localhost:8000/transcribe', formData);
+    const res = await axios.post(`${BASE_URL}/transcribe`, formData);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('Upload failed:', err);
       alert('❌ Upload failed.');
     } finally {
+      setUploading(false);
       setLoading(false);
-      setActiveTask(null);
     }
   };
 
   const handleSummarizeFromFile = async () => {
+    setProcessingFile(true);
     setLoading(true);
-    setActiveTask("file");
     try {
-      const res = await axios.post('http://localhost:8000/transcribe/from-file');
+    const res = await axios.post(`${BASE_URL}/transcribe/from-file`);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('meeting.txt summarize failed:', err);
       alert('❌ meeting.txt file missing in backend transcripts/ folder.');
     } finally {
+      setProcessingFile(false);
       setLoading(false);
-      setActiveTask(null);
     }
   };
 
@@ -110,10 +112,10 @@ const TranscriptInput = () => {
         <h3 className="text-lg font-semibold mb-1">🧠 Auto Process Saved Transcript</h3>
         <button
           onClick={handleSummarizeFromFile}
-          disabled={loading || activeTask === "upload"}
+          disabled={uploading || processingFile}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          {loading && activeTask === "file" ? 'Processing...' : 'Generate Summary from meeting.txt'}
+          {processingFile ? 'Processing...' : 'Generate Summary from meeting.txt'}
         </button>
       </div>
 
@@ -123,10 +125,10 @@ const TranscriptInput = () => {
         <input type="file" onChange={handleFileChange} className="border p-2 rounded mr-2" />
         <button
           onClick={handleUploadAndSummarize}
-          disabled={loading || activeTask === "file"}
+          disabled={uploading || processingFile}
           className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
         >
-          {loading && activeTask === "upload" ? 'Processing...' : 'Upload & Summarize'}
+          {uploading ? 'Uploading...' : 'Upload & Summarize'}
         </button>
       </div>
 
@@ -189,6 +191,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
 
 
