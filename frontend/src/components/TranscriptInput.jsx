@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
+const BASE_URL="https://kr-ai-meeting-bot1-25.onrender.com"
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
@@ -26,7 +26,7 @@ const TranscriptInput = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await axios.post('http://localhost:8000/transcribe', formData);
+      const res = await axios.post(`${BASE_URL}/transcribe`, formData);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('Upload failed:', err);
@@ -42,7 +42,7 @@ const TranscriptInput = () => {
     setUploadDisabled(true); // disable upload button
 
     try {
-      const res = await axios.post('http://localhost:8000/transcribe/from-file');
+      const res = await axios.post(`${BASE_URL}/transcribe/from-file`);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('meeting.txt summarize failed:', err);
