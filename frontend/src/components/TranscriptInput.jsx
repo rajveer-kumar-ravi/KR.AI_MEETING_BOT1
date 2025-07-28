@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
+const BASE_URL="https://kr-ai-meeting-bot1-25.onrender.com"
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
@@ -8,23 +8,12 @@ const TranscriptInput = () => {
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // 🔹 File change handler
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  const handleSummarizeFromFile = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.post('http://localhost:8000/transcribe/from-file');
-      updateTranscriptData(res.data);
-    } catch (err) {
-      console.error('Backend file summarize failed:', err);
-      alert('❌ meeting.txt file missing in backend transcripts/ folder.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // 🔹 Upload and summarize uploaded file
   const handleUploadAndSummarize = async () => {
     if (!file) {
       alert("⚠️ Please select a file first.");
@@ -34,7 +23,7 @@ const TranscriptInput = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await axios.post('http://localhost:8000/transcribe', formData);
+      const res = await axios.post(`${BASE_URL}/transcribe`, formData);
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('Upload failed:', err);
@@ -44,6 +33,21 @@ const TranscriptInput = () => {
     }
   };
 
+  // 🔹 Summarize from backend's `meeting.txt`
+  const handleSummarizeFromFile = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${BASE_URL}/transcribe/from-file`);
+      updateTranscriptData(res.data);
+    } catch (err) {
+      console.error('meeting.txt summarize failed:', err);
+      alert('❌ meeting.txt file missing in backend transcripts/ folder.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 Utility to update data on UI
   const updateTranscriptData = (data) => {
     setTranscript(data.transcript || '');
     setSummary(data.summary?.map((s) => s.summary).join('\n') || 'No summary available');
@@ -80,13 +84,12 @@ const TranscriptInput = () => {
   };
 
   const generateExportText = () => {
-    let text = '📝 Meeting Summary:\n';
-    text += summary + '\n\n';
+    let text = '📝 Meeting Summary:\n' + summary + '\n\n';
     text += '✅ Action Items:\n';
-    if (Array.isArray(actionItems)) {
-      text += actionItems
-        .map((item) => `- ${item.task} [Owner: ${item.owner}] [Deadline: ${item.deadline}]`)
-        .join('\n');
+    if (Array.isArray(actionItems) && actionItems.length > 0) {
+      text += actionItems.map((item) =>
+        `- ${item.task} [Owner: ${item.owner}] [Deadline: ${item.deadline}]`
+      ).join('\n');
     } else {
       text += 'No action items.';
     }
@@ -99,32 +102,34 @@ const TranscriptInput = () => {
 
   return (
     <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-lg border">
-      <h2 className="text-lg font-semibold mb-1">📄 Upload File (optional)</h2>
-      <h3 className="text-2xl font-bold mb-4">Transcript Processor</h3>
+      <h2 className="text-2xl font-bold mb-4">🎙️ Transcript Processor</h2>
 
-      {/* ✅ Only uses backend meeting.txt */}
-      <div className="flex items-center gap-4 mb-4">
+      {/* 🔹 Generate from backend's existing meeting.txt */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold mb-1">🧠 Auto Process Saved Transcript</h3>
         <button
           onClick={handleSummarizeFromFile}
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          {loading ? 'Processing...' : '🧠 Generate Summary'}
+          {loading ? 'Processing...' : 'Generate Summary from meeting.txt'}
         </button>
       </div>
 
-      {/* ✅ Upload your own file */}
-      <div className="flex items-center gap-4 mb-4">
-        <input type="file" onChange={handleFileChange} className="border p-1 rounded" />
+      {/* 🔹 Upload your own file */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold mb-1">📄 Upload Transcript File</h3>
+        <input type="file" onChange={handleFileChange} className="border p-2 rounded mr-2" />
         <button
           onClick={handleUploadAndSummarize}
           disabled={loading}
-          className="bg-white border px-4 py-1.5 rounded hover:bg-gray-100"
+          className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
         >
           {loading ? 'Processing...' : 'Upload & Summarize'}
         </button>
       </div>
 
+      {/* 🔹 Clear */}
       <div className="mb-4">
         <button
           onClick={handleClear}
@@ -134,6 +139,7 @@ const TranscriptInput = () => {
         </button>
       </div>
 
+      {/* 🔹 Summary */}
       {summary && (
         <div className="mb-4">
           <h4 className="font-bold mb-1">📝 Summary</h4>
@@ -141,6 +147,7 @@ const TranscriptInput = () => {
         </div>
       )}
 
+      {/* 🔹 Action Items */}
       {Array.isArray(actionItems) && actionItems.length > 0 && (
         <div className="mb-4">
           <h4 className="font-bold mb-1">✅ Action Items</h4>
@@ -156,6 +163,7 @@ const TranscriptInput = () => {
         </div>
       )}
 
+      {/* 🔹 Export Options */}
       {(summary || actionItems.length > 0) && (
         <div className="flex flex-col gap-2">
           <button onClick={handleCopy} className="bg-gray-700 text-white px-4 py-2 rounded">
@@ -180,4 +188,5 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
