@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
+const BASE_URL="https://kr-ai-meeting-bot1-25.onrender.com"
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
   const [transcript, setTranscript] = useState('');
@@ -28,7 +28,7 @@ const TranscriptInput = () => {
     formData.append('file', file);
 
     try {
-      const res = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe', formData, {
+      const res = await axios.post(`${BASE-URL}/transcribe`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -48,7 +48,7 @@ const TranscriptInput = () => {
     setLoading(true);
     setActiveAction('generate');
     try {
-      const res = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe/from-file');
+      const res = await axios.post(`${BASEURL}/transcribe/from-file`);
       setTranscript(res.data.transcript);
       setSummary(res.data.summary[0]?.summary || '');
       setActionItems(res.data.action_items || []);
