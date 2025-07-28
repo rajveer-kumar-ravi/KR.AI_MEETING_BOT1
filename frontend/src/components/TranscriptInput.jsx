@@ -7,183 +7,128 @@ const TranscriptInput = () => {
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [processingFile, setProcessingFile] = useState(false);
+  const [disableType, setDisableType] = useState(null); // "upload" or "generate"
+
+  const updateTranscriptData = (data) => {
+    setTranscript(data.transcript || '');
+    setSummary(data.summary || '');
+    setActionItems(data.action_items || []);
+  };
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
+    setDisableType(null); // reset state
   };
 
   const handleUploadAndSummarize = async () => {
     if (!file) {
-      alert("⚠️ Please select a file first.");
+      alert('⚠️ Please select a file first.');
       return;
     }
 
-    setUploading(true);
     setLoading(true);
+    setDisableType("upload");
+
     try {
       const formData = new FormData();
       formData.append('file', file);
-    const res = await axios.post(`${BASE_URL}/transcribe`, formData);
+
+      const res = await axios.post(
+        'https://kr-ai-meeting-backend.onrender.com/transcribe',
+        formData
+      );
+
       updateTranscriptData(res.data);
     } catch (err) {
       console.error('Upload failed:', err);
       alert('❌ Upload failed.');
+      setDisableType(null);
     } finally {
-      setUploading(false);
       setLoading(false);
     }
   };
 
   const handleSummarizeFromFile = async () => {
-    setProcessingFile(true);
     setLoading(true);
+    setDisableType("generate");
+
     try {
-    const res = await axios.post(`${BASE_URL}/transcribe/from-file`);
+      const res = await axios.post(
+        'https://kr-ai-meeting-backend.onrender.com/transcribe/from-file'
+      );
+
       updateTranscriptData(res.data);
     } catch (err) {
-      console.error('meeting.txt summarize failed:', err);
-      alert('❌ meeting.txt file missing in backend transcripts/ folder.');
+      console.error('Summary generation failed:', err);
+      alert('❌ Summary generation failed.');
+      setDisableType(null);
     } finally {
-      setProcessingFile(false);
       setLoading(false);
     }
   };
 
-  const updateTranscriptData = (data) => {
-    setTranscript(data.transcript || '');
-    setSummary(data.summary?.map((s) => s.summary).join('\n') || 'No summary available');
-    setActionItems(data.action_items || []);
-  };
-
-  const handleClear = () => {
-    setFile(null);
-    setTranscript('');
-    setSummary('');
-    setActionItems([]);
-  };
-
-  const handleCopy = () => {
-    const text = generateExportText();
-    navigator.clipboard.writeText(text);
-    alert('📋 Copied to clipboard!');
-  };
-
-  const handleDownload = () => {
-    const text = generateExportText();
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'meeting-summary.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const generateMailtoLink = () => {
-    const text = generateExportText();
-    return `mailto:?subject=Meeting Summary&body=${encodeURIComponent(text)}`;
-  };
-
-  const generateExportText = () => {
-    let text = '📝 Meeting Summary:\n' + summary + '\n\n';
-    text += '✅ Action Items:\n';
-    if (Array.isArray(actionItems) && actionItems.length > 0) {
-      text += actionItems.map((item) =>
-        `- ${item.task} [Owner: ${item.owner}] [Deadline: ${item.deadline}]`
-      ).join('\n');
-    } else {
-      text += 'No action items.';
-    }
-    return text;
-  };
-
-  const handleExportToNotion = () => {
-    alert('📓 Export to Notion feature coming soon!');
-  };
-
   return (
-    <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-lg border">
-      <h2 className="text-2xl font-bold mb-4">🎙️ Transcript Processor</h2>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4">Transcript Processor</h1>
 
-      {/* 🔹 Generate from backend's existing meeting.txt */}
+      {/* File Upload */}
       <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-1">🧠 Auto Process Saved Transcript</h3>
-        <button
-          onClick={handleSummarizeFromFile}
-          disabled={uploading || processingFile}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          {processingFile ? 'Processing...' : 'Generate Summary from meeting.txt'}
-        </button>
-      </div>
-
-      {/* 🔹 Upload your own file */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-1">📄 Upload Transcript File</h3>
-        <input type="file" onChange={handleFileChange} className="border p-2 rounded mr-2" />
+        <input type="file" onChange={handleFileChange} className="mb-2" />
         <button
           onClick={handleUploadAndSummarize}
-          disabled={uploading || processingFile}
-          className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          disabled={loading || disableType === "generate"}
+          className={`px-4 py-2 rounded text-white ${
+            loading || disableType === "generate"
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700'
+          }`}
         >
-          {uploading ? 'Uploading...' : 'Upload & Summarize'}
+          {loading && disableType === "upload" ? 'Uploading...' : 'Upload & Summarize'}
         </button>
       </div>
 
-      {/* 🔹 Clear */}
+      {/* Generate Summary from meeting.txt */}
       <div className="mb-4">
         <button
-          onClick={handleClear}
-          className="bg-red-100 text-red-700 px-4 py-2 rounded border hover:bg-red-200"
+          onClick={handleSummarizeFromFile}
+          disabled={loading || disableType === "upload"}
+          className={`px-4 py-2 rounded text-white ${
+            loading || disableType === "upload"
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
         >
-          Clear
+          {loading && disableType === "generate"
+            ? 'Generating Summary...'
+            : 'Generate Summary from meeting.txt'}
         </button>
       </div>
 
-      {/* 🔹 Summary */}
+      {/* Display Transcript */}
+      {transcript && (
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold">Transcript:</h2>
+          <pre className="whitespace-pre-wrap bg-gray-100 p-3 rounded">{transcript}</pre>
+        </div>
+      )}
+
+      {/* Display Summary */}
       {summary && (
         <div className="mb-4">
-          <h4 className="font-bold mb-1">📝 Summary</h4>
-          <p className="whitespace-pre-wrap text-gray-800">{summary}</p>
+          <h2 className="text-xl font-semibold">Summary:</h2>
+          <p className="bg-gray-100 p-3 rounded">{summary}</p>
         </div>
       )}
 
-      {/* 🔹 Action Items */}
-      {Array.isArray(actionItems) && actionItems.length > 0 && (
-        <div className="mb-4">
-          <h4 className="font-bold mb-1">✅ Action Items</h4>
-          <ul className="list-disc list-inside text-gray-800">
-            {actionItems.map((item, index) => (
-              <li key={index}>
-                <strong>Task:</strong> {item.task}<br />
-                <strong>Owner:</strong> {item.owner}<br />
-                <strong>Deadline:</strong> {item.deadline}
-              </li>
+      {/* Display Action Items */}
+      {actionItems.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold">Action Items:</h2>
+          <ul className="list-disc pl-6 bg-gray-100 p-3 rounded">
+            {actionItems.map((item, idx) => (
+              <li key={idx}>{item}</li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {/* 🔹 Export Options */}
-      {(summary || actionItems.length > 0) && (
-        <div className="flex flex-col gap-2">
-          <button onClick={handleCopy} className="bg-gray-700 text-white px-4 py-2 rounded">
-            📋 Copy to Clipboard
-          </button>
-          <button onClick={handleDownload} className="bg-green-600 text-white px-4 py-2 rounded">
-            💾 Download Summary
-          </button>
-          <a
-            href={generateMailtoLink()}
-            className="bg-purple-600 text-white px-4 py-2 rounded text-center"
-          >
-            📧 Send via Email
-          </a>
-          <button onClick={handleExportToNotion} className="bg-yellow-500 text-white px-4 py-2 rounded">
-            📓 Export to Notion
-          </button>
         </div>
       )}
     </div>
@@ -191,6 +136,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
 
 
