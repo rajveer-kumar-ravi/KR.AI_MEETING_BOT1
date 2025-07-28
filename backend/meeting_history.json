@@ -1,0 +1,122 @@
+[
+  {
+    "timestamp": "2025-07-27T11:41:40.935123",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . The Bot is",
+    "action_items": [
+      {
+        "task": "Review and update the HTML structure of the meeting transcript",
+        "owner": "Developer",
+        "deadline": "By end of the day"
+      },
+      {
+        "task": "Optimize the HTML structure for better SEO and accessibility",
+        "owner": "Developer",
+        "deadline": "Within 2 working days"
+      },
+      {
+        "task": "Update the favicon.ico file",
+        "owner": "Designer or Developer",
+        "deadline": "By end of the day"
+      },
+      {
+        "task": "Update the title tag with a more descriptive title",
+        "owner": "Developer",
+        "deadline": "By end of the day"
+      },
+      {
+        "task": "Ensure proper linking of the JavaScript file",
+        "owner": "Developer",
+        "deadline": "By end of the day"
+      },
+      {
+        "task": "Optimize the JavaScript bundle for better performance",
+        "owner": "Developer",
+        "deadline": "Within 3 working days"
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-27T12:05:48.885131",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . The Bot is  a self powered AI-powered meeting assistant .",
+    "action_items": []
+  },
+  {
+    "timestamp": "2025-07-27T12:11:04.013109",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . The Bot is a  self powered AI-powered meeting assistant .",
+    "action_items": []
+  },
+  {
+    "timestamp": "2025-07-27T13:55:17.957725",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . The Bot is  a self powered AI-powered meeting assistant .",
+    "action_items": [
+      {
+        "task": "Develop a prototype of the MeetingBot app",
+        "owner": "Development Team",
+        "deadline": "2 weeks from today"
+      },
+      {
+        "task": "Integrate AI technology into the MeetingBot app",
+        "owner": "AI Development Team",
+        "deadline": "1 month from today"
+      },
+      {
+        "task": "Test and debug the AI-powered MeetingBot app",
+        "owner": "QA Team",
+        "deadline": "2 weeks after AI integration"
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-27T15:02:55.964571",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . The Bot is  a self powered AI-powered meeting assistant . This is our transcript for the zoom meeting audio file just for testing .",
+    "action_items": []
+  },
+  {
+    "timestamp": "2025-07-27T15:05:24.821349",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . This is our transcript for the zoom meeting audio file just for testing .",
+    "action_items": []
+  },
+  {
+    "timestamp": "2025-07-27T15:07:38.809620",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . The Bot is  a self powered AI-powered meeting assistant . This is our transcript for the zoom meeting audio file just for testing .",
+    "action_items": [
+      {
+        "task": "Raise awareness about the environment and the importance of considering future generations in development, particularly regarding the use of fossil fuels",
+        "owner": "Aditan",
+        "deadline": "Not specified in the transcript"
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-27T16:39:31.336674",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . This is our transcript for the zoom meeting audio file just for testing .",
+    "action_items": [
+      {
+        "task": "Raise awareness about the environment and the importance of considering future generations in development, particularly regarding the use of fossil fuels",
+        "owner": "Aditan",
+        "deadline": "Not specified in the transcript"
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-27T22:01:37.778046",
+    "summary": " The MeetingBot is a self-powered AI-Powered Meeting Assistant . The bot is based on the MeetingBot app . This is our transcript for the zoom meeting audio file just for testing .",
+    "action_items": [
+      {
+        "task": "Complete API response fixes for the frontend integration",
+        "owner": "Speaker 3",
+        "deadline": "Friday"
+      },
+      {
+        "task": "Work on merging features into one unified interface",
+        "owner": "Backend team",
+        "deadline": "Friday"
+      },
+      {
+        "task": "Sync with the UI team after this call",
+        "owner": "Speaker 2",
+        "deadline": "After this call"
+      }
+    ]
+  }
+]
