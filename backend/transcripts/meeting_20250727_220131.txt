@@ -1,11 +1,1 @@
 
-[00:00] Speaker 1: Hello everyone, thanks for joining today's meeting.
-[00:05] Speaker 2: Good morning! Let's start with the project updates.
-[00:10] Speaker 3: I've completed the frontend integration. Just need API response fixes.
-[00:20] Speaker 1: Awesome. Backend team, what's the status?
-[00:25] Speaker 2: We're done with the transcription module and working on summarization.
-[00:35] Speaker 3: Can we merge these features into one unified interface?
-[00:40] Speaker 1: Yes, that's the goal. Let's aim to finish that by Friday.
-[00:50] Speaker 2: Agreed. I'll sync with the UI team after this call.
-[00:55] Speaker 3: Perfect. Anything else?
-[01:00] Speaker 1: No, that’s all. Great job, everyone!
