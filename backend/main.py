@@ -30,8 +30,8 @@ openai_client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUT
 # ---- CORS ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
     allow_origins=[
+        "*",
         "https://kr-ai-meeting-bot-1.vercel.app",  # ✅ Your deployed frontend
         "http://localhost:3000",                  # ✅ For local testing
     ],
