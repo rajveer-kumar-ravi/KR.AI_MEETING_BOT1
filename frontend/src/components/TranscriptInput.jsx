@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-const BASE_URL="https://kr-ai-meeting-bot-daeg.onrender.com"
 
 const TranscriptInput = () => {
   const [file, setFile] = useState(null);
@@ -13,30 +12,42 @@ const TranscriptInput = () => {
     setFile(e.target.files[0]);
   };
 
-  const handleUpload = async () => {
+  const handleSummarizeFromFile = async () => {
     setLoading(true);
     try {
-      let res;
-
-      // ✅ If file is selected, upload that
-      if (file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        res = await axios.post(`${BASE_URL}/transcribe`, formData);
-      } else {
-        // ✅ If no file, just use backend's saved meeting.txt from Chrome Extension
-        res = await axios.post(`${BASE_URL}/transcribe/from-file`);
-      }
-
-      setTranscript(res.data.transcript || '');
-      setSummary(res.data.summary?.map((s) => s.summary).join('\n') || 'No summary available');
-      setActionItems(res.data.action_items || []);
+      const res = await axios.post('http://localhost:8000/transcribe/from-file');
+      updateTranscriptData(res.data);
     } catch (err) {
-      console.error('Upload failed:', err);
-      alert('❌ Upload failed. Make sure "meeting.txt" exists in backend /transcripts/ folder or upload a file.');
+      console.error('Backend file summarize failed:', err);
+      alert('❌ meeting.txt file missing in backend transcripts/ folder.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUploadAndSummarize = async () => {
+    if (!file) {
+      alert("⚠️ Please select a file first.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await axios.post('http://localhost:8000/transcribe', formData);
+      updateTranscriptData(res.data);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('❌ Upload failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTranscriptData = (data) => {
+    setTranscript(data.transcript || '');
+    setSummary(data.summary?.map((s) => s.summary).join('\n') || 'No summary available');
+    setActionItems(data.action_items || []);
   };
 
   const handleClear = () => {
@@ -91,20 +102,22 @@ const TranscriptInput = () => {
       <h2 className="text-lg font-semibold mb-1">📄 Upload File (optional)</h2>
       <h3 className="text-2xl font-bold mb-4">Transcript Processor</h3>
 
+      {/* ✅ Only uses backend meeting.txt */}
       <div className="flex items-center gap-4 mb-4">
         <button
-          onClick={handleUpload}
+          onClick={handleSummarizeFromFile}
           disabled={loading}
           className="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700"
         >
-          🧠 Generate Summary
+          {loading ? 'Processing...' : '🧠 Generate Summary'}
         </button>
       </div>
 
+      {/* ✅ Upload your own file */}
       <div className="flex items-center gap-4 mb-4">
         <input type="file" onChange={handleFileChange} className="border p-1 rounded" />
         <button
-          onClick={handleUpload}
+          onClick={handleUploadAndSummarize}
           disabled={loading}
           className="bg-white border px-4 py-1.5 rounded hover:bg-gray-100"
         >
@@ -167,3 +180,4 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
