@@ -7,11 +7,10 @@ const TranscriptInput = () => {
   const [summary, setSummary] = useState('');
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeAction, setActiveAction] = useState(null); // "upload" or "generate"
+  const [activeAction, setActiveAction] = useState(null);
 
-  // Load default meeting.txt on mount
   useEffect(() => {
-    fetch('/transcripts/meeting.txt')
+    fetch('https://kr-ai-meeting-bot-backend.vercel.app/get-transcript')
       .then((res) => res.ok ? res.text() : '')
       .then((text) => {
         if (text.trim()) {
@@ -20,9 +19,8 @@ const TranscriptInput = () => {
       });
   }, []);
 
-  // Upload transcript file to backend
   const handleFileUpload = async () => {
-    if (!file) return alert('Please select a file first.');
+    if (!file) return alert('Please select a file.');
     setLoading(true);
     setActiveAction('upload');
 
@@ -30,34 +28,33 @@ const TranscriptInput = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const res = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setTranscript(response.data.transcript);
-      setSummary(response.data.summary);
-      setActionItems(response.data.action_items || []);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('❌ Upload failed.');
+
+      setTranscript(res.data.transcript);
+      setSummary(res.data.summary[0]?.summary || '');
+      setActionItems(res.data.action_items || []);
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading file.');
     } finally {
       setLoading(false);
       setActiveAction(null);
     }
   };
 
-  // Generate summary from /transcribe/from-file
   const handleGenerateSummary = async () => {
     setLoading(true);
     setActiveAction('generate');
-
     try {
-      const response = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe/from-file');
-      setTranscript(response.data.transcript);
-      setSummary(response.data.summary);
-      setActionItems(response.data.action_items || []);
-    } catch (error) {
-      console.error('Summary generation failed:', error);
-      alert('❌ Summary generation failed.');
+      const res = await axios.post('https://kr-ai-meeting-bot-backend.vercel.app/transcribe/from-file');
+      setTranscript(res.data.transcript);
+      setSummary(res.data.summary[0]?.summary || '');
+      setActionItems(res.data.action_items || []);
+    } catch (err) {
+      console.error(err);
+      alert('Error generating summary.');
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -73,27 +70,14 @@ const TranscriptInput = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-4">🧾 Transcript Processor</h1>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Transcript Processor</h1>
 
-      {/* Auto Process Saved Transcript */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">🧠 Auto Process Saved Transcript</h2>
-        <button
-          onClick={handleGenerateSummary}
-          disabled={loading || activeAction === 'upload'}
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
-        >
-          Generate Summary from meeting.txt
-        </button>
-      </div>
-
-      {/* Upload Transcript */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">📄 Upload Transcript File</h2>
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold">Upload a File</h2>
         <input
           type="file"
-          accept=".mp3,.wav,.txt"
+          accept=".mp3,.wav,.m4a,.txt"
           onChange={(e) => setFile(e.target.files[0])}
           className="mt-2"
         />
@@ -101,45 +85,47 @@ const TranscriptInput = () => {
           <button
             onClick={handleFileUpload}
             disabled={loading || activeAction === 'generate'}
-            className="mr-2 px-4 py-2 bg-green-600 text-white rounded disabled:bg-gray-400"
+            className="mr-2 px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
           >
-            {loading && activeAction === 'upload' ? 'Processing...' : 'Upload & Transcribe'}
+            Upload & Transcribe
           </button>
           <button
-            onClick={handleClear}
-            className="px-4 py-2 bg-red-500 text-white rounded"
+            onClick={handleGenerateSummary}
+            disabled={loading || activeAction === 'upload'}
+            className="px-4 py-2 bg-green-600 text-white rounded disabled:bg-gray-400"
           >
-            Clear
+            Generate Summary from Saved File
           </button>
         </div>
       </div>
 
-      {/* Result */}
+      <button
+        onClick={handleClear}
+        className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+      >
+        Clear
+      </button>
+
       {transcript && (
         <div className="mt-6">
-          <h3 className="font-semibold text-lg">📝 Transcript</h3>
-          <textarea
-            className="w-full border mt-2 p-2 rounded"
-            rows="6"
-            value={transcript}
-            readOnly
-          />
+          <h3 className="text-lg font-bold">Transcript</h3>
+          <textarea className="w-full p-2 border rounded" rows="10" value={transcript} readOnly />
         </div>
       )}
 
       {summary && (
         <div className="mt-6">
-          <h3 className="font-semibold text-lg">📋 Summary</h3>
-          <p className="bg-gray-100 p-3 rounded">{summary}</p>
+          <h3 className="text-lg font-bold">Summary</h3>
+          <p className="bg-white p-3 rounded shadow">{summary}</p>
         </div>
       )}
 
       {actionItems.length > 0 && (
         <div className="mt-6">
-          <h3 className="font-semibold text-lg">✅ Action Items</h3>
+          <h3 className="text-lg font-bold">Action Items</h3>
           <ul className="list-disc ml-6">
-            {actionItems.map((item, index) => (
-              <li key={index}>{item}</li>
+            {actionItems.map((item, i) => (
+              <li key={i}>{JSON.stringify(item)}</li>
             ))}
           </ul>
         </div>
@@ -149,6 +135,7 @@ const TranscriptInput = () => {
 };
 
 export default TranscriptInput;
+
 
 
 
